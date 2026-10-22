@@ -1,0 +1,61 @@
+# ==========================================
+# Python & Bytecode
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# ==========================================
+# Virtual Environments
+# ==========================================
+venv/
+env/
+ENV/
+.venv/
+env.bak/
+venv.bak/
+
+# ==========================================
+# Sensitive Configuration & API Keys
+# ==========================================
+# Note: Use llm_config.example.json as template
+llm_config.json
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+
+# ==========================================
+# Dynamic Runtime Files & Camera Buffers
+# ==========================================
+command.json
+latest_command.json
+static/latest.jpg
+static/latest_temp.jpg
+tempCodeRunnerFile.py
+*.log
+
+# ==========================================
+# Operating System Junk
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ==========================================
+# IDE & Editors
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

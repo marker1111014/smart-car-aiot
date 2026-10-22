@@ -1,0 +1,720 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIoT 尋物小車超低延遲控制中心</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #070a10;
+            --card-bg: rgba(14, 20, 32, 0.88);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-purple: #a855f7;
+            --accent-amber: #f59e0b;
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --json-bg: #030712;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.12) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            max-width: 1200px;
+            margin: 0 auto 16px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .title-group { display: flex; align-items: center; gap: 12px; }
+        .title-group i { font-size: 1.8rem; color: var(--accent-cyan); }
+        h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+        
+        .status-strip {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            border: 1px solid var(--border-color);
+        }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: pulse 1.8s infinite;
+        }
+        .pulse-dot.paused {
+            background-color: var(--accent-amber);
+            box-shadow: 0 0 8px var(--accent-amber);
+            animation: none;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.35; transform: scale(1.25); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .network-info-bar {
+            max-width: 1200px;
+            margin: 0 auto 16px auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-size: 0.84rem;
+            color: var(--text-sub);
+        }
+        .network-info-bar code {
+            color: var(--accent-cyan);
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(6, 182, 212, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .control-master-card {
+            max-width: 1200px;
+            margin: 0 auto 16px auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            backdrop-filter: blur(14px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .control-master-card.active-state {
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 24px rgba(16, 185, 129, 0.08);
+        }
+        .control-master-card.paused-state {
+            border-color: rgba(245, 158, 11, 0.4);
+            box-shadow: 0 0 24px rgba(245, 158, 11, 0.08);
+        }
+        .master-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .master-icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+        .master-icon-box.icon-active {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+        }
+        .master-icon-box.icon-paused {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-amber);
+        }
+        .master-text h3 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .master-text p {
+            font-size: 0.84rem;
+            color: var(--text-sub);
+            margin-top: 4px;
+        }
+        .master-btn-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .btn-toggle-main {
+            padding: 10px 22px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-start-mode {
+            background: var(--accent-green);
+            color: #070a10;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+        }
+        .btn-pause-mode {
+            background: var(--accent-amber);
+            color: #070a10;
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+        }
+        .btn-toggle-main:hover {
+            transform: translateY(-1px);
+            opacity: 0.95;
+        }
+        .btn-quick {
+            padding: 9px 16px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-quick:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .btn-quick.danger {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--accent-red);
+            color: #fca5a5;
+        }
+
+        .search-target-card {
+            max-width: 1200px;
+            margin: 0 auto 20px auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px 22px;
+            backdrop-filter: blur(14px);
+        }
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 10px 16px;
+            background: rgba(7, 10, 16, 0.85);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 0.92rem;
+            outline: none;
+        }
+        .search-box button {
+            padding: 10px 20px;
+            background: var(--accent-cyan);
+            border: none;
+            border-radius: 10px;
+            color: #070a10;
+            font-weight: 600;
+            font-size: 0.92rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .search-box button:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(14px);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title i { color: var(--accent-cyan); }
+
+        .img-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-color);
+        }
+        .img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: opacity 0.3s;
+        }
+        .img-wrapper img.dimmed { opacity: 0.25; filter: grayscale(80%); }
+
+        .video-paused-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(8, 12, 20, 0.85);
+            backdrop-filter: blur(4px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-align: center;
+            padding: 20px;
+            z-index: 10;
+        }
+        .video-paused-overlay.show { display: flex; }
+
+        .mode-banner {
+            margin-top: 14px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .mode-scanning { background: rgba(245, 158, 11, 0.12); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .mode-locked { background: rgba(16, 185, 129, 0.12); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .mode-exploring { background: rgba(168, 85, 247, 0.12); color: var(--accent-purple); border: 1px solid rgba(168, 85, 247, 0.3); }
+        .mode-paused { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .mode-safestop { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.5); }
+
+        .json-box {
+            background: var(--json-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: #cbd5e1;
+            line-height: 1.45;
+            overflow-x: auto;
+            max-height: 240px;
+            margin-top: 14px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .feedback-box {
+            height: 480px;
+            overflow-y: auto;
+            background: var(--json-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .feedback-item {
+            font-size: 0.84rem;
+            line-height: 1.4;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid var(--accent-cyan);
+        }
+        .feedback-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-sub);
+            margin-bottom: 2px;
+        }
+
+        @media (max-width: 860px) {
+            .container { grid-template-columns: 1fr; }
+            .control-master-card { flex-direction: column; align-items: flex-start; }
+            .master-btn-group { width: 100%; justify-content: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="title-group">
+            <i class="fa-solid fa-robot"></i>
+            <h1>AIoT 尋物小車超低延遲控制中心</h1>
+        </div>
+        <div class="status-strip">
+            <div class="badge">
+                <span id="header-pulse" class="pulse-dot"></span>
+                <span id="server-status">伺服器：在線</span>
+            </div>
+            <div class="badge">
+                <i class="fa-solid fa-bolt" style="color: var(--accent-amber);"></i>
+                <span>回傳延遲: <strong id="latency-val" style="color: var(--accent-green);">&lt; 10ms</strong></span>
+            </div>
+            <div class="badge">
+                <i class="fa-solid fa-brain" style="color: var(--accent-purple);"></i>
+                <span id="gemini-status">Gemini：背景就緒</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="network-info-bar">
+        <div>🌐 本機伺服器：<code id="lan-url">載入中...</code></div>
+        <div>📡 ESP32 鏡頭：<code id="upload-url">載入中...</code></div>
+        <div>🤖 控制設備：<code>http://172.20.10.4/api/command</code> (記憶體非同步自動推播)</div>
+        <div>⚡ 狀態：<strong id="stream-subtext" style="color: var(--accent-green);">鏡頭拍照與自動回傳機制運作中</strong></div>
+    </div>
+
+    <!-- 鏡頭開關與小車運行中控總開關面板 -->
+    <div id="master-panel" class="control-master-card active-state">
+        <div class="master-info">
+            <div id="master-icon" class="master-icon-box icon-active">
+                <i id="master-fa" class="fa-solid fa-video"></i>
+            </div>
+            <div class="master-text">
+                <h3 id="master-title">
+                    <span>ESP32 鏡頭與回傳機制</span>
+                    <span id="master-pill" style="font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background: rgba(16,185,129,0.2); color: var(--accent-green);">傳輸中</span>
+                </h3>
+                <p id="master-desc">正在即時接收 ESP32 鏡頭畫面並於 HTTP 回應直接回饋 Gemini 決策 JSON</p>
+            </div>
+        </div>
+        <div class="master-btn-group">
+            <button id="toggle-btn" class="btn-toggle-main btn-pause-mode" onclick="toggleStream()">
+                <i class="fa-solid fa-pause"></i> <span>暫停相機與回傳</span>
+            </button>
+            <button class="btn-quick danger" onclick="emergencyStop()" title="立即下達剎車指令並關閉回傳">
+                <i class="fa-solid fa-hand"></i> <span>緊急煞車</span>
+            </button>
+            <button class="btn-quick" onclick="resetArm()" title="手臂舵機回到90度待機狀態">
+                <i class="fa-solid fa-rotate-left"></i> <span>手臂復位</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 尋找目標設定 -->
+    <div class="search-target-card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-weight: 600; font-size: 0.95rem;">🎯 尋找目標設定</div>
+            <div style="font-size: 0.85rem; color: var(--text-sub);">目前追蹤：<strong id="target-label" style="color: var(--accent-cyan);">寶特瓶</strong></div>
+        </div>
+        <div class="search-box">
+            <input type="text" id="target-input" placeholder="輸入目標物件名稱，例如：寶特瓶、剪刀、紅蘋果、鑰匙...">
+            <button onclick="setTarget()"><i class="fa-solid fa-crosshairs"></i> 更新目標</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 影像與即時動作狀態 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-video"></i>
+                    <span>ESP32-CAM 即時影像</span>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button onclick="reloadImageNow()" class="btn-quick" style="padding: 4px 10px; font-size: 0.75rem;"><i class="fa-solid fa-rotate-right"></i> 刷新畫面</button>
+                    <span id="frame-stat" style="font-size: 0.78rem; color: var(--accent-amber);">尚未收到 ESP32 傳輸</span>
+                    <div id="live-indicator" style="font-size: 0.8rem; color: var(--accent-green);">
+                        <i class="fa-solid fa-circle-dot"></i> 即時連線
+                    </div>
+                </div>
+            </div>
+            
+            <div class="img-wrapper">
+                <img id="live-img" src="/api/latest_image" alt="ESP32 即時影像">
+                <div id="video-overlay" class="video-paused-overlay">
+                    <i class="fa-solid fa-circle-pause" style="font-size: 2.2rem; color: var(--accent-amber);"></i>
+                    <h3 style="font-size: 1.15rem; font-weight: 600;">鏡頭拍攝與回傳已手動暫停</h3>
+                    <p style="font-size: 0.82rem; color: var(--text-sub);">ESP32 處於省電休眠待命模式，小車已安全剎車。</p>
+                    <button onclick="toggleStream()" class="btn-toggle-main btn-start-mode" style="margin-top: 6px;">
+                        <i class="fa-solid fa-play"></i> 立即啟動傳輸
+                    </button>
+                </div>
+            </div>
+
+            <div id="mode-badge" class="mode-banner mode-scanning">
+                <span id="mode-text"><i class="fa-solid fa-compass"></i> 全景旋轉掃描中...</span>
+                <span id="ai-time-text" style="font-size: 0.8rem; font-weight: normal;">AI 耗時: 1.2s</span>
+            </div>
+
+            <div style="margin-top: 14px; font-weight: 600; font-size: 0.85rem; color: var(--text-sub);">
+                符合 ESP32-S3 HTTP JSON API 規範之即時控制 JSON (模式 A ~ E)：
+            </div>
+            <pre id="json-output" class="json-box">{}</pre>
+        </div>
+
+        <!-- 系統決策日誌 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-terminal"></i>
+                    <span>即時決策與巡航日誌</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-sub);">自動捲動</div>
+            </div>
+            <div id="feedback-box" class="feedback-box"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentStreamEnabled = true;
+        let lastImageTimestamp = 0;
+        function reloadImageNow() {
+            const img = document.getElementById('live-img');
+            if (img) {
+                img.src = '/api/latest_image?t=' + Date.now();
+            }
+        }
+
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/api/status');
+                if (!res.ok) return;
+                const d = await res.json();
+
+                if (d.server_url) {
+                    document.getElementById('lan-url').innerText = d.server_url;
+                    document.getElementById('upload-url').innerText = d.server_url + '/api/upload';
+                }
+
+                if (d.target_item) {
+                    document.getElementById('target-label').innerText = d.target_item;
+                }
+
+                if (d.stream_enabled !== undefined) {
+                    updateStreamUI(d.stream_enabled);
+                }
+
+                const frameStat = document.getElementById('frame-stat');
+                if (frameStat) {
+                    if (d.frame_count > 0) {
+                        frameStat.innerText = `⚡ 已接收: ${d.frame_count} 幀`;
+                        frameStat.style.color = "var(--accent-green)";
+                    } else {
+                        frameStat.innerText = `⏳ 尚未收到 ESP32 傳輸`;
+                        frameStat.style.color = "var(--accent-amber)";
+                    }
+                }
+
+                if (d.data && d.data.server_latency_ms !== undefined) {
+                    document.getElementById('latency-val').innerText = d.data.server_latency_ms + ' ms';
+                }
+                const aiSec = d.ai_latency_s ? d.ai_latency_s + 's' : '計算中';
+                const aiInterval = d.ai_interval_s ? ' (動態間隔: ' + d.ai_interval_s + 's)' : '';
+                document.getElementById('gemini-status').innerText = 'Gemini (' + (d.active_model || 'Flash') + ')';
+                document.getElementById('ai-time-text').innerText = 'AI 推理: ' + aiSec + aiInterval;
+
+                const modeEl = document.getElementById('mode-badge');
+                const modeTxt = document.getElementById('mode-text');
+                const sm = d.search_mode || (d.data ? d.data.search_mode : "SCANNING");
+                if (!d.stream_enabled || sm === "PAUSED") {
+                    modeEl.className = "mode-banner mode-paused";
+                    modeTxt.innerHTML = '<i class="fa-solid fa-circle-pause"></i> ⏸️ 系統暫停：停止拍攝與動作';
+                } else if (sm === "SAFE_STOP") {
+                    modeEl.className = "mode-banner mode-safestop";
+                    modeTxt.innerHTML = '<i class="fa-solid fa-shield-halved"></i> ⚠️ API 嚴重壅塞：小車暫時安全停車待命';
+                } else if (sm === "LOCKED") {
+                    modeEl.className = "mode-banner mode-locked";
+                    modeTxt.innerHTML = '<i class="fa-solid fa-bullseye"></i> 🎯 鎖定目標！接近與抓取中';
+                } else if (sm === "EXPLORING") {
+                    modeEl.className = "mode-banner mode-exploring";
+                    modeTxt.innerHTML = '<i class="fa-solid fa-car"></i> 🚗 360°未發現，向前微調換位探索';
+                } else {
+                    modeEl.className = "mode-banner mode-scanning";
+                    modeTxt.innerHTML = '<i class="fa-solid fa-compass"></i> 🔍 未發現目標，全景旋轉掃描中';
+                }
+
+                if (d.data) {
+                    document.getElementById('json-output').innerText = JSON.stringify(d.data, null, 2);
+                }
+
+                if (d.stream_enabled) {
+                    const img = document.getElementById('live-img');
+                    if (img && d.last_frame_time && d.last_frame_time !== lastImageTimestamp) {
+                        lastImageTimestamp = d.last_frame_time;
+                        img.src = '/api/latest_image?t=' + d.last_frame_time;
+                    }
+                }
+
+                if (d.feedbacks) {
+                    renderFeedbacks(d.feedbacks);
+                }
+            } catch (err) {
+                console.error("fetchStatus error", err);
+            }
+        }
+
+        function updateStreamUI(enabled) {
+            currentStreamEnabled = enabled;
+            const panel = document.getElementById('master-panel');
+            const icon = document.getElementById('master-icon');
+            const fa = document.getElementById('master-fa');
+            const pill = document.getElementById('master-pill');
+            const desc = document.getElementById('master-desc');
+            const btn = document.getElementById('toggle-btn');
+            const overlay = document.getElementById('video-overlay');
+            const img = document.getElementById('live-img');
+            const pulse = document.getElementById('header-pulse');
+            const liveInd = document.getElementById('live-indicator');
+            const subtext = document.getElementById('stream-subtext');
+
+            if (enabled) {
+                panel.className = "control-master-card active-state";
+                icon.className = "master-icon-box icon-active";
+                fa.className = "fa-solid fa-video";
+                pill.style.background = "rgba(16,185,129,0.2)";
+                pill.style.color = "var(--accent-green)";
+                pill.innerText = "傳輸中";
+                desc.innerText = "正在即時接收 ESP32 鏡頭畫面並於 HTTP 回應直接回饋 Gemini 決策 JSON";
+
+                btn.className = "btn-toggle-main btn-pause-mode";
+                btn.innerHTML = '<i class="fa-solid fa-pause"></i> <span>暫停相機與回傳</span>';
+
+                overlay.className = "video-paused-overlay";
+                img.className = "";
+                pulse.className = "pulse-dot";
+                liveInd.style.color = "var(--accent-green)";
+                liveInd.innerHTML = '<i class="fa-solid fa-circle-dot"></i> 即時連線';
+                subtext.style.color = "var(--accent-green)";
+                subtext.innerText = "鏡頭拍照與自動回傳機制運作中";
+            } else {
+                panel.className = "control-master-card paused-state";
+                icon.className = "master-icon-box icon-paused";
+                fa.className = "fa-solid fa-video-slash";
+                pill.style.background = "rgba(245,158,11,0.2)";
+                pill.style.color = "var(--accent-amber)";
+                pill.innerText = "已休眠";
+                desc.innerText = "已暫停鏡頭拍攝與上傳，ESP32 處於低功耗待命模式，小車已煞車";
+
+                btn.className = "btn-toggle-main btn-start-mode";
+                btn.innerHTML = '<i class="fa-solid fa-play"></i> <span>啟動相機與回傳</span>';
+
+                overlay.className = "video-paused-overlay show";
+                img.className = "dimmed";
+                pulse.className = "pulse-dot paused";
+                liveInd.style.color = "var(--accent-amber)";
+                liveInd.innerHTML = '<i class="fa-solid fa-circle-pause"></i> 待命休眠中';
+                subtext.style.color = "var(--accent-amber)";
+                subtext.innerText = "鏡頭傳輸已關閉 (省電待命中)";
+            }
+        }
+
+        async function toggleStream() {
+            try {
+                const targetState = !currentStreamEnabled;
+                const res = await fetch('/api/set_stream_state', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled: targetState })
+                });
+                if (res.ok) {
+                    fetchStatus();
+                }
+            } catch (err) {
+                alert("切換相機狀態失敗: " + err);
+            }
+        }
+
+        async function emergencyStop() {
+            try {
+                await fetch('/api/emergency_stop', { method: 'POST' });
+                fetchStatus();
+            } catch (err) {
+                alert("煞車指令發送失敗: " + err);
+            }
+        }
+
+        async function resetArm() {
+            try {
+                await fetch('/api/reset_arm', { method: 'POST' });
+                fetchStatus();
+            } catch (err) {
+                alert("手臂復位失敗: " + err);
+            }
+        }
+
+        function renderFeedbacks(list) {
+            const box = document.getElementById('feedback-box');
+            box.innerHTML = '';
+            list.slice().reverse().forEach(fb => {
+                const div = document.createElement('div');
+                div.className = 'feedback-item';
+                div.innerHTML = `<div class="feedback-time">${fb.time}</div><div>${fb.text}</div>`;
+                box.appendChild(div);
+            });
+        }
+
+        async function setTarget() {
+            const input = document.getElementById('target-input');
+            const target = input.value.trim();
+            if (!target) return alert("請輸入目標！");
+            try {
+                const res = await fetch('/api/set_target', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target: target })
+                });
+                if (res.ok) {
+                    input.value = "";
+                    fetchStatus();
+                }
+            } catch (e) {
+                alert("設定失敗");
+            }
+        }
+
+        setInterval(fetchStatus, 800);
+        fetchStatus();
+    </script>
+</body>
+</html>

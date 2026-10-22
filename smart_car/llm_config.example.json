@@ -1,0 +1,7 @@
+{
+  "provider": "agnes",
+  "api_url": "https://apihub.agnes-ai.com/v1/chat/completions",
+  "api_key": "",
+  "model": "agnes-2.5-flash",
+  "enabled": true
+}
